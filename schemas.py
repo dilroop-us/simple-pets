@@ -1,7 +1,6 @@
 from pydantic import BaseModel, EmailStr
 from typing import List, Optional
 
-# Authentication Schemas
 class UserRegister(BaseModel):
     email: EmailStr
     password: str
@@ -10,11 +9,10 @@ class UserLogin(BaseModel):
     email: EmailStr
     password: str
 
-# Profile Schemas
 class UserProfile(BaseModel):
     name: str
-    phone: Optional[str]
-    image: Optional[str] = None  # profile picture or avatar
+    phone: Optional[str] = None
+    image: Optional[str] = None
 
 class UserProfileUpdate(BaseModel):
     name: Optional[str]
