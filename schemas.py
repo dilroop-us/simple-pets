@@ -3,6 +3,7 @@ from typing import List, Optional
 
 class UserRegister(BaseModel):
     email: EmailStr
+    name: str
     password: str
 
 class UserLogin(BaseModel):

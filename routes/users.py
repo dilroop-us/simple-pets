@@ -17,6 +17,7 @@ def register_user(user: UserRegister):
 
     user_data = {
         "id": doc_ref.id,
+        "name": user.name,
         "email": user.email,
         "password": hashed_pw,
         "created_at": datetime.utcnow().isoformat(),
