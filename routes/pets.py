@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from database import db
 from core.auth import get_current_user
 from schemas import PetCreate
@@ -20,10 +20,37 @@ def create_pet(pet: PetCreate, user_id: str = Depends(get_current_user)):
     db.collection("pets").document(pet_id).set(pet_data)
     return {"message": "Pet added", "pet_id": pet_id}
 
+
 @router.get("/")
-def list_all_pets():
-    pets = db.collection("pets").stream()
-    return [doc.to_dict() for doc in pets]
+def list_all_pets(
+    type: str = Query(default=None),
+    breed: str = Query(default=None),
+    age: int = Query(default=None),
+    min_age: int = Query(default=None),
+    max_age: int = Query(default=None)
+):
+    pets_ref = db.collection("pets")
+    pets = pets_ref.stream()
+    pet_list = []
+
+    for pet_doc in pets:
+        pet = pet_doc.to_dict()
+
+        if type and pet.get("type") != type:
+            continue
+        if breed and pet.get("breed") != breed:
+            continue
+        if age is not None and pet.get("age") != age:
+            continue
+        if min_age is not None and pet.get("age") < min_age:
+            continue
+        if max_age is not None and pet.get("age") > max_age:
+            continue
+
+        pet_list.append(pet)
+
+    return pet_list
+
 
 @router.get("/{pet_id}")
 def get_pet(pet_id: str):
@@ -31,6 +58,7 @@ def get_pet(pet_id: str):
     if not pet_doc.exists:
         raise HTTPException(status_code=404, detail="Pet not found")
     return pet_doc.to_dict()
+
 
 @router.put("/{pet_id}")
 def update_pet(pet_id: str, pet: PetCreate, user_id: str = Depends(get_current_user)):
@@ -45,6 +73,7 @@ def update_pet(pet_id: str, pet: PetCreate, user_id: str = Depends(get_current_u
     updated_data["updated_at"] = datetime.utcnow().isoformat()
     pet_ref.update(updated_data)
     return {"message": "Pet updated"}
+
 
 @router.delete("/{pet_id}")
 def delete_pet(pet_id: str, user_id: str = Depends(get_current_user)):
