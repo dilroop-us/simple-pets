@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
-from schemas import UserRegister, UserLogin, UserUpdate
+from schemas import UserRegister, UserLogin, UserProfile, UserProfileUpdate
 from database import db
 from core.auth import create_access_token, hash_password, verify_password, get_current_user
 from datetime import datetime
@@ -14,18 +14,27 @@ def register_user(user: UserRegister):
 
     hashed_pw = hash_password(user.password)
     doc_ref = db.collection("users").document()
+
     user_data = {
         "id": doc_ref.id,
-        "name": user.name,
         "email": user.email,
-        "phone": user.phone,
         "password": hashed_pw,
         "created_at": datetime.utcnow().isoformat(),
         "updated_at": datetime.utcnow().isoformat()
     }
     doc_ref.set(user_data)
+
+    # Create empty profile
+    db.collection("profiles").document(doc_ref.id).set({
+        "user_id": doc_ref.id,
+        "name": "",
+        "phone": None,
+        "image": None
+    })
+
     token = create_access_token({"sub": user.email})
     return {"access_token": token}
+
 
 @router.post("/login")
 def login(user: UserLogin):
@@ -40,15 +49,30 @@ def login(user: UserLogin):
     token = create_access_token({"sub": user.email})
     return {"access_token": token}
 
-@router.put("/profile")
-def update_profile(user_update: UserUpdate, email: str = Depends(get_current_user)):
-    user_query = db.collection("users").where("email", "==", email).get()
-    if not user_query:
+
+@router.get("/profile")
+def get_profile(email: str = Depends(get_current_user)):
+    users = db.collection("users").where("email", "==", email).get()
+    if not users:
         raise HTTPException(status_code=404, detail="User not found")
 
-    user_doc = user_query[0]
-    user_ref = db.collection("users").document(user_doc.id)
-    updates = {k: v for k, v in user_update.dict().items() if v is not None}
-    updates["updated_at"] = datetime.utcnow().isoformat()
-    user_ref.update(updates)
+    user_id = users[0].id
+    profile = db.collection("profiles").document(user_id).get()
+    if not profile.exists:
+        raise HTTPException(status_code=404, detail="Profile not found")
+
+    return profile.to_dict()
+
+
+@router.put("/profile")
+def update_profile(profile_data: UserProfileUpdate, email: str = Depends(get_current_user)):
+    users = db.collection("users").where("email", "==", email).get()
+    if not users:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    user_id = users[0].id
+    profile_ref = db.collection("profiles").document(user_id)
+
+    updates = {k: v for k, v in profile_data.dict().items() if v is not None}
+    profile_ref.update(updates)
     return {"message": "Profile updated"}
