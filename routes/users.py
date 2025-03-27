@@ -8,9 +8,9 @@ router = APIRouter()
 
 @router.post("/register")
 def register_user(user: UserRegister):
-    existing = db.collection("users").where(filter=("email", "==", user.email)).get()
-    if existing:
-        raise HTTPException(status_code=400, detail="Email already registered")
+    users_ref = db.collection("users").where("email", "==", user.email).stream()
+    for doc in users_ref:
+        raise HTTPException(status_code=400, detail="User already exists")
 
     hashed_pw = hash_password(user.password)
     doc_ref = db.collection("users").document()
