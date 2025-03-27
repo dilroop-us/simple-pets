@@ -28,7 +28,7 @@ def register_user(user: UserRegister):
     # Create blank profile
     db.collection("profiles").document(doc_ref.id).set({
         "user_id": doc_ref.id,
-        "name": "",
+        "name": user.name,
         "phone": None,
         "image": None
     })
