@@ -36,9 +36,10 @@ def list_all_pets(
     for pet_doc in pets:
         pet = pet_doc.to_dict()
 
-        if type and pet.get("type") != type:
+        # Normalize for case-insensitive filtering
+        if type and pet.get("type", "").lower() != type.lower():
             continue
-        if breed and pet.get("breed") != breed:
+        if breed and pet.get("breed", "").lower() != breed.lower():
             continue
         if age is not None and pet.get("age") != age:
             continue
@@ -50,6 +51,7 @@ def list_all_pets(
         pet_list.append(pet)
 
     return pet_list
+
 
 
 @router.get("/{pet_id}")
