@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from database import db
 from core.auth import get_current_user
-from schemas import PetCreate
+from schemas import PetCreate, PetAvailabilityUpdate
 from datetime import datetime
 import uuid
 
@@ -88,3 +88,28 @@ def delete_pet(pet_id: str, user_id: str = Depends(get_current_user)):
 
     pet_ref.delete()
     return {"message": "Pet deleted"}
+
+
+
+
+@router.patch("/{pet_id}/availability")
+def update_pet_availability(
+    pet_id: str,
+    availability: PetAvailabilityUpdate,
+    user_id: str = Depends(get_current_user)
+):
+    pet_ref = db.collection("pets").document(pet_id)
+    pet_doc = pet_ref.get()
+
+    if not pet_doc.exists:
+        raise HTTPException(status_code=404, detail="Pet not found")
+
+    if pet_doc.to_dict().get("owner_id") != user_id:
+        raise HTTPException(status_code=403, detail="Not authorized")
+
+    pet_ref.update({
+        "available_for_adoption": availability.available_for_adoption,
+        "updated_at": datetime.utcnow().isoformat()
+    })
+
+    return {"message": "Availability status updated"}

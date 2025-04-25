@@ -20,6 +20,12 @@ class UserProfileUpdate(BaseModel):
     phone: Optional[str]
     image: Optional[str]
 
+class Location(BaseModel):
+    latitude: float
+    longitude: float
+    place: str
+
+
 # Pets
 class ContactDetails(BaseModel):
     name: str
@@ -45,6 +51,9 @@ class PetCreate(BaseModel):
     is_trained: bool
     special_needs: List[str]
     image_urls: List[str]
-    location: str
+    location: Location
     available_for_adoption: bool
     contact_details: ContactDetails
+
+class PetAvailabilityUpdate(BaseModel):
+    available_for_adoption: bool
